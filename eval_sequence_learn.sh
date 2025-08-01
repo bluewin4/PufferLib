@@ -4,6 +4,6 @@
 # Run evaluation with the latest model
 python -m pufferlib.pufferl eval puffer_sequence_learn \
     --train.device cuda \
-    --vec.num_envs 1 \
+    --vec.num-envs 1 \
     --load-model-path latest \
-    --render_mode human 
+    --render-mode human 
