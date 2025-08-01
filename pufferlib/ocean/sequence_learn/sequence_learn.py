@@ -26,7 +26,7 @@ class SequenceLearn(pufferlib.PufferEnv):
         # Constants from C header
         self.sequence_length = 4
         self.num_values = 4
-        self.observation_size = self.sequence_length + 2
+        self.observation_size = self.sequence_length + 3  # Added target hint
         
         self.single_observation_space = gymnasium.spaces.Box(
             low=-1.0, high=1.0,

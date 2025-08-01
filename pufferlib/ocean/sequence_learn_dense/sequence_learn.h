@@ -15,7 +15,7 @@ const Color PUFF_BACKGROUND = (Color){6, 24, 24, 255};
 #define TRIALS_PER_EPISODE 16
 #define STEPS_PER_EPISODE 64
 #define NUM_VALUES 4  // Dimensionality of values (0, 1, 2, 3)
-#define OBSERVATION_SIZE (SEQUENCE_LENGTH + 2)  // Current sequence + trial number + step in trial
+#define OBSERVATION_SIZE (SEQUENCE_LENGTH + 3)  // Current sequence + trial number + step in trial + target hint
 
 // Only use floats!
 typedef struct {
@@ -41,7 +41,7 @@ typedef struct {
     int episode_step;
     int steps_in_trial;
     int max_reward_achieved;
-    float reward_rule;  // 0: exact match, 1: partial match, 2: exponential
+    float reward_rule;  // 0: exact match, 1: partial match, 2: exponential, 3: dense step rewards
     int production_rule;  // 0: flat (all available), 1: associative
 } SequenceLearn;
 
@@ -85,7 +85,7 @@ void c_step(SequenceLearn* env) {
             if (env->current_sequence[env->sequence_position] == env->target_sequence[env->sequence_position]) {
                 env->rewards[0] = 0.25f;  // Reward for correct step
             } else {
-                env->rewards[0] = -0.05f;  // Small penalty for wrong step
+                env->rewards[0] = -0.1f;  // Small penalty for wrong step
             }
         }
         
@@ -97,9 +97,15 @@ void c_step(SequenceLearn* env) {
     
     // Check if we've completed a sequence
     if (env->sequence_position >= SEQUENCE_LENGTH) {
-        // Calculate reward for this trial
+        // Calculate final reward for this trial (in addition to step rewards)
         float trial_reward = calculate_reward(env);
-        env->rewards[0] = trial_reward;
+        
+        if (env->reward_rule != 3) {  // If not using dense rewards, give trial reward
+            env->rewards[0] = trial_reward;
+        } else {  // For dense rewards, give bonus for completing sequence
+            env->rewards[0] += trial_reward * 0.5f;  // Bonus for sequence completion
+        }
+        
         env->log.current_trial_reward = trial_reward;
         env->log.total_reward += trial_reward;
         
@@ -146,7 +152,7 @@ float calculate_reward(SequenceLearn* env) {
         }
         reward = matches ? 1.0f : 0.0f;
     }
-    else if (env->reward_rule == 1) {  // Partial match
+    else if (env->reward_rule == 1 || env->reward_rule == 3) {  // Partial match or dense
         int matches = 0;
         for (int i = 0; i < SEQUENCE_LENGTH; i++) {
             if (env->current_sequence[i] == env->target_sequence[i]) {
@@ -180,6 +186,10 @@ void update_observations(SequenceLearn* env) {
     
     // Position in current sequence (normalized)
     env->observations[SEQUENCE_LENGTH + 1] = (float)env->sequence_position / SEQUENCE_LENGTH;
+    
+    // Target hint: show the next target value to make learning easier
+    int next_target_pos = env->sequence_position < SEQUENCE_LENGTH ? env->sequence_position : 0;
+    env->observations[SEQUENCE_LENGTH + 2] = (float)env->target_sequence[next_target_pos] / (NUM_VALUES - 1);
 }
 
 int is_action_valid(SequenceLearn* env, int action) {
@@ -203,7 +213,7 @@ int is_action_valid(SequenceLearn* env, int action) {
 
 void c_render(SequenceLearn* env) {
     if (!IsWindowReady()) {
-        InitWindow(960, 600, "PufferLib Sequence Learning");
+        InitWindow(960, 600, "PufferLib Sequence Learning - Dense Rewards");
         SetTargetFPS(10);
     }
 
@@ -229,6 +239,13 @@ void c_render(SequenceLearn* env) {
             Color color = (Color[]){PUFF_RED, PUFF_GREEN, PUFF_BLUE, PUFF_CYAN}[env->current_sequence[i]];
             DrawRectangle(200 + i * 60, 100, 50, 50, color);
             DrawText(TextFormat("%d", env->current_sequence[i]), 220 + i * 60, 115, 20, PUFF_WHITE);
+            
+            // Show if this position is correct
+            if (env->current_sequence[i] == env->target_sequence[i]) {
+                DrawRectangleLines(200 + i * 60, 100, 50, 50, GREEN);
+            } else {
+                DrawRectangleLines(200 + i * 60, 100, 50, 50, RED);
+            }
         } else {
             DrawRectangle(200 + i * 60, 100, 50, 50, DARKGRAY);
             DrawText("?", 220 + i * 60, 115, 20, PUFF_WHITE);
@@ -244,6 +261,10 @@ void c_render(SequenceLearn* env) {
     if (env->log.trials_to_max_reward > 0) {
         DrawText(TextFormat("Trials to Max Reward: %.0f", env->log.trials_to_max_reward), 20, 300, 20, GREEN);
     }
+    
+    // Show reward rule
+    const char* reward_names[] = {"Exact", "Partial", "Exponential", "Dense"};
+    DrawText(TextFormat("Reward Rule: %s", reward_names[(int)env->reward_rule]), 20, 330, 20, PUFF_WHITE);
     
     EndDrawing();
 }
