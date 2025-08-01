@@ -24,9 +24,9 @@ class SequenceLearn(pufferlib.PufferEnv):
     def __init__(self, num_envs=1, render_mode=None, log_interval=128,
                  reward_rule=0, production_rule=0, buf=None, seed=0):
         # Constants from C header
-        self.sequence_length = 4
-        self.num_values = 4
-        self.observation_size = self.sequence_length + 3  # Added target hint
+        self.sequence_length = 2  # Simplified to 2-step sequences
+        self.num_values = 2  # Only 2 values for simplicity
+        self.observation_size = self.sequence_length + 3  # Current + trial + step + target hint
         
         self.single_observation_space = gymnasium.spaces.Box(
             low=-1.0, high=1.0,

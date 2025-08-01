@@ -11,11 +11,11 @@ const Color PUFF_WHITE = (Color){241, 241, 241, 241};
 const Color PUFF_BACKGROUND = (Color){6, 24, 24, 255};
 
 // Configuration constants
-#define SEQUENCE_LENGTH 4
-#define TRIALS_PER_EPISODE 16
+#define SEQUENCE_LENGTH 2  // Start with 2-step sequences for easier learning
+#define TRIALS_PER_EPISODE 32  // More trials since each is shorter
 #define STEPS_PER_EPISODE 64
-#define NUM_VALUES 4  // Dimensionality of values (0, 1, 2, 3)
-#define OBSERVATION_SIZE (SEQUENCE_LENGTH + 2)  // Current sequence + trial number + step in trial
+#define NUM_VALUES 2  // Only 2 values (0, 1) for simplicity
+#define OBSERVATION_SIZE (SEQUENCE_LENGTH + 3)  // Current sequence + trial + step + target hint
 
 // Only use floats!
 typedef struct {
@@ -180,6 +180,10 @@ void update_observations(SequenceLearn* env) {
     
     // Position in current sequence (normalized)
     env->observations[SEQUENCE_LENGTH + 1] = (float)env->sequence_position / SEQUENCE_LENGTH;
+    
+    // Target hint: show the next target value to make learning easier
+    int next_target_pos = env->sequence_position < SEQUENCE_LENGTH ? env->sequence_position : 0;
+    env->observations[SEQUENCE_LENGTH + 2] = (float)env->target_sequence[next_target_pos] / (NUM_VALUES - 1);
 }
 
 int is_action_valid(SequenceLearn* env, int action) {
