@@ -40,7 +40,7 @@ class SequenceLearn(pufferlib.PufferEnv):
         self.c_envs = binding.vec_init(
             self.observations, self.actions, self.rewards,
             self.terminals, self.truncations, num_envs, seed,
-            reward_rule=reward_rule, production_rule=production_rule
+            reward_rule=int(reward_rule), production_rule=int(production_rule)
         )
  
     def reset(self, seed=0):
