@@ -24,7 +24,7 @@ python -m pufferlib.pufferl train puffer_sequence_learn \
     --train.track false \
     --train.verbose true \
     --vec.num-envs 1024 \
-    --vec.num-workers 8 \
+    --vec.num-workers 4 \
     --lstm.enabled true \
     --lstm.hidden-size 128 \
     --lstm.num-layers 2 
