@@ -14,5 +14,6 @@ static int my_log(PyObject* dict, Log* log) {
     assign_to_dict(dict, "trials_to_max_reward", log->trials_to_max_reward);
     assign_to_dict(dict, "total_reward", log->total_reward);
     assign_to_dict(dict, "current_trial_reward", log->current_trial_reward);
+    assign_to_dict(dict, "achieved_max_reward", log->achieved_max_reward);
     return 0;
 } 
